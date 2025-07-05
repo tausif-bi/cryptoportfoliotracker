@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.log
+*.sqlite
+*.db
+simulated_trades.json
+simulated_trades.csv
+*.png
+*.jpg
+*.jpeg
+
+# Sensitive data
+crypto-ai-backend/config.py
+crypto-ai-backend/secrets.py
+crypto-portfolio/.env*
+
+# Build files
+build/
+dist/
+*.egg-info/

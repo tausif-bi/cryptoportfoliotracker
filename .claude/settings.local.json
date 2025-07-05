@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(touch:*)",
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(source:*)",
+      "Bash(./venv/Scripts/activate)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(venv/Scripts/activate:*)",
+      "Bash(venv/Scripts/python.exe:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(git init:*)",
+      "Bash(cd:*)",
+      "Bash(git rm:*)",
+      "Bash(rm:*)",
+      "Bash(cd:*)"
+    ],
+    "deny": []
+  }
+}
