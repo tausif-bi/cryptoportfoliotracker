@@ -26,6 +26,10 @@
       "Bash(cd:*)",
       "Bash(git rm:*)",
       "Bash(rm:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(git config:*)",
+      "Bash(cd:*)",
       "Bash(cd:*)"
     ],
     "deny": []
