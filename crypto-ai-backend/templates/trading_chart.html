@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Chart - Trendline Breakout Strategy</title>
+    <script src="/static/js/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0D0E11;
+            color: #d1d4dc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #toolbar {
+            padding: 10px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #mainChart {
+            flex: 2;
+            position: relative;
+        }
+        #rsiChart {
+            flex: 1;
+            position: relative;
+            border-top: 1px solid #333;
+        }
+        .chart-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(26, 26, 26, 0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        .info-box {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 11px;
+            color: #888;
+        }
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .price-up { color: #00FF88; }
+        .price-down { color: #FF4444; }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 18px;
+        }
+        .fullscreen-btn {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            color: #d1d4dc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        .fullscreen-btn:hover {
+            background-color: #2a2a2a;
+            border-color: #00D4FF;
+            color: #00D4FF;
+        }
+        .fullscreen-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        #container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="toolbar">
+            <div class="info-box">
+                <div class="info-item">
+                    <span class="info-label">Symbol</span>
+                    <span class="info-value" id="symbol">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Price</span>
+                    <span class="info-value" id="price">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">RSI</span>
+                    <span class="info-value" id="rsi">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Signal</span>
+                    <span class="info-value" id="signal">-</span>
+                </div>
+            </div>
+            <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">
+                <svg id="fullscreenIcon" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+                <span id="fullscreenText">Fullscreen</span>
+            </button>
+            <button class="fullscreen-btn" onclick="openInNewWindow()" style="margin-left: 8px;">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                <span>New Window</span>
+            </button>
+        </div>
+        <div id="mainChart">
+            <div class="chart-label">Trendline Breakout Strategy</div>
+            <div id="mainChartContainer" style="height: 100%;"></div>
+        </div>
+        <div id="rsiChart">
+            <div class="chart-label">RSI (14)</div>
+            <div id="rsiChartContainer" style="height: 100%;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the library to load
+        function waitForLibrary(callback, attempts = 0) {
+            if (typeof LightweightCharts !== 'undefined') {
+                callback();
+            } else if (attempts < 20) {
+                setTimeout(() => waitForLibrary(callback, attempts + 1), 100);
+            } else {
+                console.error('Failed to load TradingView Lightweight Charts library');
+                document.getElementById('mainChartContainer').innerHTML = '<div style="padding: 20px; text-align: center; color: #ff6666;">Failed to load chart library. Please refresh the page.</div>';
+            }
+        }
+        
+        window.onload = function() {
+            waitForLibrary(() => initializeChart());
+        };
+        
+        function initializeChart() {
+            console.log('Initializing chart...');
+            console.log('LightweightCharts available:', typeof LightweightCharts !== 'undefined');
+            
+            if (typeof LightweightCharts === 'undefined') {
+                console.error('LightweightCharts is not defined');
+                return;
+            }
+            
+            // Chart configuration
+            const chartOptions = {
+            layout: {
+                background: { color: '#0D0E11' },
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
+                horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+            },
+            timeScale: {
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+                timeVisible: true,
+                secondsVisible: false,
+            },
+        };
+
+        // Initialize charts
+        let mainChart, rsiChart, candlestickSeries, supportLine, resistanceLine, rsiLine;
+        
+        try {
+            mainChart = LightweightCharts.createChart(
+                document.getElementById('mainChartContainer'), 
+                { ...chartOptions, height: 400 }
+            );
+            
+            rsiChart = LightweightCharts.createChart(
+                document.getElementById('rsiChartContainer'), 
+                { ...chartOptions, height: 200 }
+            );
+
+            // Create series
+            candlestickSeries = mainChart.addCandlestickSeries({
+            upColor: '#00FF88',
+            downColor: '#FF4444',
+            borderVisible: false,
+            wickUpColor: '#00FF88',
+            wickDownColor: '#FF4444',
+        });
+
+            supportLine = mainChart.addLineSeries({
+            color: '#66FF66',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Solid,
+            title: 'Support',
+        });
+
+            resistanceLine = mainChart.addLineSeries({
+            color: '#FF6666',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Solid,
+            title: 'Resistance',
+        });
+
+            rsiLine = rsiChart.addLineSeries({
+            color: '#00D4FF',
+            lineWidth: 2,
+            title: 'RSI',
+        });
+
+            // Add RSI levels
+            rsiChart.addLineSeries({
+                color: '#FF4444',
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => ({
+                    priceRange: { minValue: 0, maxValue: 100 },
+                }),
+            }).setData([
+                { time: 0, value: 70 },
+                { time: Date.now() / 1000, value: 70 }
+            ]);
+
+            rsiChart.addLineSeries({
+                color: '#00FF88',
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                priceLineVisible: false,
+                lastValueVisible: false,
+            }).setData([
+                { time: 0, value: 30 },
+                { time: Date.now() / 1000, value: 30 }
+            ]);
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+            document.getElementById('mainChartContainer').innerHTML = '<div class="loading">Error loading chart library</div>';
+        }
+
+        // Function to load and display chart data
+        async function loadChartData() {
+            try {
+                // In production, this would fetch from your API
+                // For now, we'll use the postMessage system to receive data
+                window.addEventListener('message', function(event) {
+                    const data = event.data;
+                    
+                    if (data && data.type === 'chartData') {
+                        updateChart(data.chartData);
+                    }
+                });
+
+                // Request data from React Native
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'requestData' }));
+                }
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        function updateChart(data) {
+            try {
+                // Update candlestick data
+                if (data.candlestickData && data.candlestickData.length > 0) {
+                    candlestickSeries.setData(data.candlestickData);
+                }
+                
+                // Update support and resistance lines
+                if (data.supportLine && data.supportLine.length > 0) {
+                    supportLine.setData(data.supportLine);
+                }
+                if (data.resistanceLine && data.resistanceLine.length > 0) {
+                    resistanceLine.setData(data.resistanceLine);
+                }
+                
+                // Update RSI
+                if (data.rsiData && data.rsiData.length > 0) {
+                    rsiLine.setData(data.rsiData);
+                    
+                    // Update RSI bounds
+                    const firstTime = data.rsiData[0].time;
+                    const lastTime = data.rsiData[data.rsiData.length - 1].time;
+                    
+                    // Update 70 line
+                    rsiChart.addLineSeries({
+                        color: '#FF4444',
+                        lineWidth: 1,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        priceLineVisible: false,
+                        lastValueVisible: false,
+                    }).setData([
+                        { time: firstTime, value: 70 },
+                        { time: lastTime, value: 70 }
+                    ]);
+                    
+                    // Update 30 line
+                    rsiChart.addLineSeries({
+                        color: '#00FF88',
+                        lineWidth: 1,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        priceLineVisible: false,
+                        lastValueVisible: false,
+                    }).setData([
+                        { time: firstTime, value: 30 },
+                        { time: lastTime, value: 30 }
+                    ]);
+                }
+                
+                // Create custom series for buy/sell signals that persist on zoom
+                const buySignalSeries = mainChart.addLineSeries({
+                    color: '#00FF88',
+                    lineVisible: false,
+                    crosshairMarkerVisible: false,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                });
+                
+                const sellSignalSeries = mainChart.addLineSeries({
+                    color: '#FF4444',
+                    lineVisible: false,
+                    crosshairMarkerVisible: false,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                });
+                
+                // Add buy/sell markers
+                const markers = [];
+                const buyData = [];
+                const sellData = [];
+                
+                if (data.buySignals) {
+                    data.buySignals.forEach(signal => {
+                        // Add marker
+                        markers.push({
+                            time: signal.time,
+                            position: signal.position,
+                            color: signal.color,
+                            shape: signal.shape,
+                            text: 'BUY',
+                            size: 2
+                        });
+                        
+                        // Find the candle at this time to add a point
+                        const candle = data.candlestickData.find(c => c.time === signal.time);
+                        if (candle) {
+                            buyData.push({
+                                time: signal.time,
+                                value: candle.low * 0.995
+                            });
+                        }
+                    });
+                }
+                
+                if (data.sellSignals) {
+                    data.sellSignals.forEach(signal => {
+                        // Add marker
+                        markers.push({
+                            time: signal.time,
+                            position: signal.position,
+                            color: signal.color,
+                            shape: signal.shape,
+                            text: 'SELL',
+                            size: 2
+                        });
+                        
+                        // Find the candle at this time to add a point
+                        const candle = data.candlestickData.find(c => c.time === signal.time);
+                        if (candle) {
+                            sellData.push({
+                                time: signal.time,
+                                value: candle.high * 1.005
+                            });
+                        }
+                    });
+                }
+                
+                // Set data for signal series
+                if (buyData.length > 0) {
+                    buySignalSeries.setData(buyData);
+                    buySignalSeries.setMarkers(data.buySignals.map(s => ({
+                        time: s.time,
+                        position: 'belowBar',
+                        color: '#00FF88',
+                        shape: 'arrowUp',
+                        text: 'BUY'
+                    })));
+                }
+                
+                if (sellData.length > 0) {
+                    sellSignalSeries.setData(sellData);
+                    sellSignalSeries.setMarkers(data.sellSignals.map(s => ({
+                        time: s.time,
+                        position: 'aboveBar',
+                        color: '#FF4444',
+                        shape: 'arrowDown',
+                        text: 'SELL'
+                    })));
+                }
+                
+                // Also set markers on candlestick series for better visibility
+                if (markers.length > 0) {
+                    candlestickSeries.setMarkers(markers);
+                }
+                
+                // Add horizontal levels
+                if (data.horizontalLevels) {
+                    data.horizontalLevels.forEach(level => {
+                        const priceLine = {
+                            price: level.price,
+                            color: level.color,
+                            lineWidth: level.lineWidth,
+                            lineStyle: level.lineStyle,
+                            axisLabelVisible: true,
+                            title: level.title,
+                        };
+                        candlestickSeries.createPriceLine(priceLine);
+                    });
+                }
+                
+                // Update info display
+                document.getElementById('symbol').textContent = data.symbol || 'BTC/USDT';
+                document.getElementById('price').textContent = data.currentPrice ? `$${data.currentPrice.toFixed(2)}` : '-';
+                document.getElementById('rsi').textContent = data.currentRSI ? data.currentRSI.toFixed(2) : '-';
+                document.getElementById('signal').textContent = data.currentSignal || '-';
+                
+                // Color the signal
+                const signalElement = document.getElementById('signal');
+                signalElement.className = 'info-value';
+                if (data.currentSignal === 'BUY') {
+                    signalElement.style.color = '#00FF88';
+                } else if (data.currentSignal === 'SELL') {
+                    signalElement.style.color = '#FF4444';
+                } else if (data.currentSignal === 'HOLD LONG') {
+                    signalElement.style.color = '#FFAA00';
+                }
+                
+                // Sync time scales
+                let syncingMain = false;
+                let syncingRsi = false;
+                
+                mainChart.timeScale().subscribeVisibleTimeRangeChange(() => {
+                    if (!syncingMain && !syncingRsi) {
+                        syncingRsi = true;
+                        const range = mainChart.timeScale().getVisibleRange();
+                        if (range) {
+                            rsiChart.timeScale().setVisibleRange(range);
+                        }
+                        syncingRsi = false;
+                    }
+                });
+                
+                rsiChart.timeScale().subscribeVisibleTimeRangeChange(() => {
+                    if (!syncingMain && !syncingRsi) {
+                        syncingMain = true;
+                        const range = rsiChart.timeScale().getVisibleRange();
+                        if (range) {
+                            mainChart.timeScale().setVisibleRange(range);
+                        }
+                        syncingMain = false;
+                    }
+                });
+                
+                // Fit content
+                mainChart.timeScale().fitContent();
+                rsiChart.timeScale().fitContent();
+                
+                console.log('Chart updated successfully');
+            } catch (error) {
+                console.error('Error updating chart:', error);
+            }
+        }
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (mainChart) {
+                    mainChart.applyOptions({ 
+                        width: document.getElementById('mainChartContainer').clientWidth,
+                        height: document.getElementById('mainChartContainer').clientHeight
+                    });
+                }
+                if (rsiChart) {
+                    rsiChart.applyOptions({ 
+                        width: document.getElementById('rsiChartContainer').clientWidth,
+                        height: document.getElementById('rsiChartContainer').clientHeight
+                    });
+                }
+            });
+
+            // Initialize
+            loadChartData();
+        }
+        
+        // Fullscreen toggle function
+        function toggleFullscreen() {
+            const container = document.getElementById('container');
+            const btn = document.getElementById('fullscreenBtn');
+            const icon = document.getElementById('fullscreenIcon');
+            const text = document.getElementById('fullscreenText');
+            
+            // Check if we're in an iframe
+            const isInIframe = window.self !== window.top;
+            
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && !document.msFullscreenElement) {
+                // Enter fullscreen
+                let elementToFullscreen = container;
+                
+                // If in iframe, try to fullscreen the document element
+                if (isInIframe) {
+                    elementToFullscreen = document.documentElement;
+                }
+                
+                if (elementToFullscreen.requestFullscreen) {
+                    elementToFullscreen.requestFullscreen();
+                } else if (elementToFullscreen.webkitRequestFullscreen) {
+                    elementToFullscreen.webkitRequestFullscreen();
+                } else if (elementToFullscreen.mozRequestFullScreen) {
+                    elementToFullscreen.mozRequestFullScreen();
+                } else if (elementToFullscreen.msRequestFullscreen) {
+                    elementToFullscreen.msRequestFullscreen();
+                }
+                
+                container.classList.add('fullscreen');
+                icon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+                text.textContent = 'Exit Fullscreen';
+                
+                // Resize charts
+                setTimeout(() => {
+                    if (mainChart) {
+                        mainChart.resize(window.innerWidth, 
+                            window.innerHeight * 0.65);
+                    }
+                    if (rsiChart) {
+                        rsiChart.resize(window.innerWidth, 
+                            window.innerHeight * 0.25);
+                    }
+                }, 100);
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                container.classList.remove('fullscreen');
+                icon.innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+                text.textContent = 'Fullscreen';
+                
+                // Resize charts back
+                setTimeout(() => {
+                    if (mainChart) {
+                        mainChart.resize(document.getElementById('mainChartContainer').clientWidth, 
+                            document.getElementById('mainChartContainer').clientHeight);
+                    }
+                    if (rsiChart) {
+                        rsiChart.resize(document.getElementById('rsiChartContainer').clientWidth, 
+                            document.getElementById('rsiChartContainer').clientHeight);
+                    }
+                }, 100);
+            }
+        }
+        
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        
+        function handleFullscreenChange() {
+            const container = document.getElementById('container');
+            const icon = document.getElementById('fullscreenIcon');
+            const text = document.getElementById('fullscreenText');
+            
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && !document.msFullscreenElement) {
+                container.classList.remove('fullscreen');
+                icon.innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+                text.textContent = 'Fullscreen';
+            }
+        }
+        
+        // Function to open chart in new window
+        function openInNewWindow() {
+            const width = Math.min(1600, screen.width * 0.9);
+            const height = Math.min(900, screen.height * 0.9);
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            
+            window.open(
+                window.location.href, 
+                'TradingChart', 
+                `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+            );
+        }
+    </script>
+</body>
+</html>

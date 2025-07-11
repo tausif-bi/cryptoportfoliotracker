@@ -15,6 +15,7 @@ import exchangeService from '../services/exchangeService';
 import aiService from '../services/aiService';
 import { useTheme } from '../theme/ThemeContext';
 import { useRealTimePrices } from '../hooks/useRealTimePrices';
+import SessionTimer from '../components/SessionTimer';
 
 const HomeScreen = () => {
   const { theme } = useTheme();
@@ -182,13 +183,18 @@ const HomeScreen = () => {
         colors={[theme.colors.background, theme.colors.surface]}
         style={styles.header}
       >
-        <Text style={styles.greeting}>Good morning!</Text>
-        <Text style={styles.date}>{new Date().toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })}</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.greeting}>Good morning!</Text>
+            <Text style={styles.date}>{new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</Text>
+          </View>
+          <SessionTimer />
+        </View>
       </LinearGradient>
 
       {/* Portfolio Value Card */}
@@ -380,6 +386,11 @@ const createStyles = (theme) => StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 60,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   greeting: {
     fontSize: 28,

@@ -30,7 +30,8 @@
       "Bash(cd:*)",
       "Bash(git config:*)",
       "Bash(cd:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

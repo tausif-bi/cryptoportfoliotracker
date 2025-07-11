@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: crypto-portfolio-api
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DB_TYPE
+        value: postgresql
+      - key: DB_HOST
+        fromDatabase:
+          name: crypto-portfolio-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: crypto-portfolio-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: crypto-portfolio-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: crypto-portfolio-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: crypto-portfolio-db
+          property: password
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+databases:
+  - name: crypto-portfolio-db
+    databaseName: crypto_portfolio
+    user: crypto_user

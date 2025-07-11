@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AuthLoadingScreen from '../screens/AuthLoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 // Import main app navigator
 import AppNavigator from './AppNavigator';
@@ -39,6 +40,13 @@ const AuthNavigator = () => {
         component={RegisterScreen}
         options={{
           gestureEnabled: true, // Allow back gesture from register to login
+        }}
+      />
+      <Stack.Screen 
+        name="ForgotPassword" 
+        component={ForgotPasswordScreen}
+        options={{
+          gestureEnabled: true, // Allow back gesture to login
         }}
       />
       <Stack.Screen 

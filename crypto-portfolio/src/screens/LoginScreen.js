@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
+import { tokenManager } from '../utils/tokenManager';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -36,6 +37,8 @@ const LoginScreen = ({ navigation }) => {
       
       if (result.success) {
         console.log('✅ Login successful! Navigating to Main...');
+        // Start token monitoring after successful login
+        tokenManager.startTokenMonitoring();
         // Navigate directly without alert for web compatibility
         navigation.replace('Main');
       } else {
@@ -113,6 +116,14 @@ const LoginScreen = ({ navigation }) => {
               ) : (
                 <Text style={styles.buttonText}>Login</Text>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.forgotPasswordButton}
+              onPress={() => navigation.navigate('ForgotPassword')}
+              disabled={loading}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -210,6 +221,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     textDecorationLine: 'underline',
+  },
+  forgotPasswordButton: {
+    marginTop: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    color: '#00D4FF',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

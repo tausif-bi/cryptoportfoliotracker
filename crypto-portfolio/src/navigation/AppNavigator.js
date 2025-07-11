@@ -15,6 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import StrategiesScreen from '../screens/StrategiesScreen';
 import StrategyComparisonScreen from '../screens/StrategyComparisonScreen';
 import StrategyDetailScreen from '../screens/StrategyDetailScreen';
+import InteractiveChartScreen from '../screens/InteractiveChartScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -31,6 +32,7 @@ const StrategiesStack = () => {
       <Stack.Screen name="StrategiesMain" component={StrategiesScreen} />
       <Stack.Screen name="StrategyComparison" component={StrategyComparisonScreen} />
       <Stack.Screen name="StrategyDetail" component={StrategyDetailScreen} />
+      <Stack.Screen name="InteractiveChart" component={InteractiveChartScreen} />
     </Stack.Navigator>
   );
 };

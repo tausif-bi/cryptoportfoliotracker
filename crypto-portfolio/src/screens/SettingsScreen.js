@@ -18,6 +18,7 @@ import exchangeService from '../services/exchangeService';
 import aiService from '../services/aiService';
 import { authService } from '../services/authService';
 import { ThemeContext, useTheme } from '../theme/ThemeContext';
+import { tokenManager } from '../utils/tokenManager';
 
 const SettingsScreen = ({ navigation }) => {
   const rootNavigation = useNavigation();
@@ -281,6 +282,10 @@ const SettingsScreen = ({ navigation }) => {
       console.log('=== STARTING LOGOUT PROCESS ===');
       console.log('Navigation object:', navigation);
       console.log('Root navigation object:', rootNavigation);
+      
+      // Stop token monitoring before logout
+      tokenManager.stopTokenMonitoring();
+      console.log('✅ Token monitoring stopped');
       
       // Call logout service
       await authService.logout();

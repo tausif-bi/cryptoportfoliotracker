@@ -512,6 +512,19 @@ const StrategiesScreen = ({ navigation }) => {
             <Text style={styles.compareButtonText}>Compare with Actual</Text>
           </TouchableOpacity>
         </View>
+        
+        {/* Interactive Chart Button */}
+        <TouchableOpacity
+          style={[styles.interactiveChartButton, { backgroundColor: theme.colors.primary }]}
+          onPress={() => navigation.navigate('InteractiveChart', { 
+            symbol: selectedCoin 
+          })}
+        >
+          <Ionicons name="trending-up" size={20} color={theme.colors.background} />
+          <Text style={[styles.interactiveChartButtonText, { color: theme.colors.background }]}>
+            Open Interactive Chart
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -1166,6 +1179,20 @@ const createStyles = (theme) => StyleSheet.create({
   timeframeDescription: {
     fontSize: 14,
     color: theme.colors.textSecondary,
+  },
+  interactiveChartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  interactiveChartButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
